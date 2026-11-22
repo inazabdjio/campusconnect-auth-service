@@ -1,0 +1,47 @@
+# Environnements virtuels Python
+.venv/
+venv/
+ENV/
+env/
+
+# Fichiers d'environnement et secrets (ne jamais commiter .env)
+.env
+*.local
+
+# Byte-code Python et caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Tests et couverture de code
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Biométrie faciale / modèles / captures locales
+models/
+weights/
+*.h5
+*.onnx
+*.pkl
+*.npy
+*.jpg
+*.jpeg
+*.png
+
+# Logs et fichiers temporaires
+*.log
+*.tmp
+*.bak
+*.swp
+
+# VS Code (garder uniquement les fichiers partagés si besoin)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
