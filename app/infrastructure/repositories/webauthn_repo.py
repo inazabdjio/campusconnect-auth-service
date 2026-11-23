@@ -1,4 +1,5 @@
 from uuid import UUID
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.domain.interfaces import WebAuthnCredentialRepository
@@ -16,25 +17,30 @@ class SqlAlchemyWebAuthnRepository(WebAuthnCredentialRepository):
         public_key: str,
         sign_count: int,
     ) -> None:
-        existing = (
-            self.db.query(WebAuthnCredentialORM)
-            .filter(WebAuthnCredentialORM.credential_id == credential_id)
-            .first()
-        )
-        if existing:
-            existing.public_key = public_key
-            existing.sign_count = sign_count
-            self.db.commit()
-            return
+        try:
+            existing = (
+                self.db.query(WebAuthnCredentialORM)
+                .filter(WebAuthnCredentialORM.credential_id == credential_id)
+                .first()
+            )
+            if existing:
+                existing.user_id = user_id
+                existing.public_key = public_key
+                existing.sign_count = sign_count
+                self.db.commit()
+                return
 
-        orm = WebAuthnCredentialORM(
-            user_id=user_id,
-            credential_id=credential_id,
-            public_key=public_key,
-            sign_count=sign_count,
-        )
-        self.db.add(orm)
-        self.db.commit()
+            orm = WebAuthnCredentialORM(
+                user_id=user_id,
+                credential_id=credential_id,
+                public_key=public_key,
+                sign_count=sign_count,
+            )
+            self.db.add(orm)
+            self.db.commit()
+        except SQLAlchemyError:
+            self.db.rollback()
+            raise
 
     def get_by_credential_id(self, credential_id: str) -> dict | None:
         orm = (
@@ -53,11 +59,15 @@ class SqlAlchemyWebAuthnRepository(WebAuthnCredentialRepository):
         }
 
     def update_sign_count(self, credential_id: str, new_sign_count: int) -> None:
-        orm = (
-            self.db.query(WebAuthnCredentialORM)
-            .filter(WebAuthnCredentialORM.credential_id == credential_id)
-            .first()
-        )
-        if orm:
-            orm.sign_count = new_sign_count
-            self.db.commit()
+        try:
+            orm = (
+                self.db.query(WebAuthnCredentialORM)
+                .filter(WebAuthnCredentialORM.credential_id == credential_id)
+                .first()
+            )
+            if orm:
+                orm.sign_count = new_sign_count
+                self.db.commit()
+        except SQLAlchemyError:
+            self.db.rollback()
+            raise

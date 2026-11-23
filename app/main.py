@@ -1,5 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from app.core.config import get_settings
 from app.infrastructure.api.routes.auth_routes import router as auth_router
@@ -33,3 +36,8 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="CampusConnect Auth Service", version="1.0.0", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(auth_router)
+
+
+@app.get("/mobile-test", include_in_schema=False)
+def mobile_test_page():
+    return FileResponse(Path(__file__).resolve().parent.parent / "mobile_test.html")

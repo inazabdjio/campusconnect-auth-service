@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusConnect — Authentification</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card: #101726;
+      --card-inner: #162033;
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --blue: #3b82f6;
+      --blue-dark: #2563eb;
+      --green: #10b981;
+      --green-dark: #059669;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: 16px 14px 40px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(circle at 85% 5%, rgba(59, 130, 246, 0.18), transparent 38%),
+        radial-gradient(circle at 10% 90%, rgba(16, 185, 129, 0.14), transparent 42%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container { max-width: 480px; margin: 0 auto; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      border-radius: 18px;
+      background: rgba(16, 23, 38, 0.92);
+      border: 1px solid var(--border);
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-badge {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; font-weight: 800;
+      background: linear-gradient(135deg, var(--blue), var(--green)); color: #fff;
+    }
+    .brand h1 { margin: 0; font-size: 1.05rem; }
+    .brand small { color: var(--muted); font-size: 0.76rem; }
+
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 600;
+      background: rgba(148, 163, 184, 0.12); color: var(--muted); border: 1px solid var(--border);
+    }
+    .status-chip.online { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 18px 16px; margin-bottom: 14px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    .title { margin: 0 0 4px; font-size: 1.04rem; font-weight: 700; }
+    .subtitle { margin: 0 0 14px; font-size: 0.83rem; color: var(--muted); line-height: 1.42; }
+
+    label { display: block; font-size: 0.79rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    input {
+      width: 100%; padding: 12px 13px; margin-bottom: 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card-inner); color: var(--text);
+      font-size: 0.95rem; outline: none;
+    }
+
+    .mode-switcher { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .mode-tile {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 13px 6px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--card-inner); color: var(--muted); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    }
+    .mode-tile .emoji { font-size: 1.45rem; }
+    .mode-tile.active {
+      color: #fff; border-color: var(--blue);
+      background: linear-gradient(150deg, rgba(59, 130, 246, 0.26), rgba(139, 92, 246, 0.16));
+    }
+
+    .pill-tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px;
+      border-radius: 12px; background: #0b111e; border: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .pill-tab {
+      padding: 9px 8px; border: none; border-radius: 9px; background: transparent;
+      color: var(--muted); font-size: 0.81rem; font-weight: 700; cursor: pointer;
+    }
+    .pill-tab.active { background: var(--card-inner); color: #fff; }
+
+    .btn {
+      width: 100%; padding: 13px 14px; border-radius: 13px; border: none;
+      font-size: 0.92rem; font-weight: 700; color: #fff; background: var(--blue);
+      cursor: pointer; margin-top: 6px;
+    }
+    .btn:hover:not(:disabled) { background: var(--blue-dark); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn.green { background: var(--green); }
+    .btn.green:hover:not(:disabled) { background: var(--green-dark); }
+    .btn.secondary { background: var(--card-inner); color: var(--text); border: 1px solid var(--border); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .viewport {
+      border-radius: 14px; overflow: hidden; background: #05080f; border: 1px solid var(--border);
+      margin: 10px 0; min-height: 190px; display: flex; align-items: center; justify-content: center;
+    }
+    .viewport video { width: 100%; max-height: 230px; object-fit: cover; display: block; }
+    .viewport-empty { color: var(--muted); font-size: 0.82rem; padding: 18px; text-align: center; }
+
+    .shot-box {
+      background: var(--card-inner); border: 1px solid var(--border); border-radius: 12px;
+      padding: 6px; text-align: center;
+    }
+    .shot-box small { display: block; font-size: 0.73rem; color: var(--muted); margin-bottom: 4px; }
+    .shot-box img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; background: #090e18; }
+
+    .fingerprint-hero {
+      text-align: center; padding: 16px 12px; margin-bottom: 12px; border-radius: 16px;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.06));
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .fingerprint-ring {
+      width: 68px; height: 68px; margin: 0 auto 10px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 2rem;
+      background: rgba(16, 185, 129, 0.16); border: 2px solid rgba(16, 185, 129, 0.5);
+    }
+
+    .notice {
+      font-size: 0.8rem; color: #fde68a; background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.28); padding: 10px 12px; border-radius: 12px;
+      margin-bottom: 12px; line-height: 1.4;
+    }
+
+    .hidden { display: none !important; }
+
+    .log-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+    pre {
+      margin: 0; padding: 12px; border-radius: 12px; background: #050811; border: 1px solid var(--border);
+      color: #93c5fd; font-size: 0.77rem; line-height: 1.45; max-height: 220px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">CC</div>
+        <div>
+          <h1>CampusConnect</h1>
+          <small>Déverrouillage & Connexion</small>
+        </div>
+      </div>
+      <div id="sessionChip" class="status-chip">
+        <span class="status-dot"></span>
+        <span id="sessionText">Non connecté</span>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2 class="title">Mode d'authentification</h2>
+      <p class="subtitle">Choisis un seul mode indépendant.</p>
+
+      <label for="email">Compte étudiant (e-mail)</label>
+      <input id="email" type="email" value="ina.etudiant@uy1.cm" placeholder="exemple@uy1.cm" />
+
+      <div class="mode-switcher">
+        <button type="button" class="mode-tile active" data-mode="password" onclick="switchMode('password')">
+          <span class="emoji">🔑</span>
+          <span>Mot de passe</span>
+        </button>
+        <button type="button" class="mode-tile" data-mode="face" onclick="switchMode('face')">
+          <span class="emoji">🙂</span>
+          <span>Visage</span>
+        </button>
+        <button type="button" class="mode-tile" data-mode="fingerprint" onclick="switchMode('fingerprint')">
+          <span class="emoji">👆</span>
+          <span>Empreinte</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 1. MOT DE PASSE -->
+    <section id="view-password" class="card">
+      <h2 class="title">Connexion par mot de passe</h2>
+      <p class="subtitle">Connexion classique via <code>/auth/login</code>.</p>
+      <label for="password">Mot de passe</label>
+      <input id="password" type="password" placeholder="Ton mot de passe" />
+      <button type="button" class="btn" onclick="loginWithPassword()">Se connecter</button>
+      <div id="password-session-actions" class="grid-2 hidden" style="margin-top: 10px;">
+        <button type="button" class="btn secondary" onclick="checkProfile()">Profil (/auth/me)</button>
+        <button type="button" class="btn secondary" onclick="logout()">Déconnexion</button>
+      </div>
+    </section>
+
+    <!-- 2. VISAGE -->
+    <section id="view-face" class="card hidden">
+      <h2 class="title">Reconnaissance faciale</h2>
+      <p class="subtitle">Enregistre d'abord ton visage (connecté), puis connecte-toi avec.</p>
+
+      <div class="pill-tabs">
+        <button type="button" id="face-tab-enroll" class="pill-tab active" onclick="switchFaceAction('enroll')">Enregistrer mon visage</button>
+        <button type="button" id="face-tab-login" class="pill-tab" onclick="switchFaceAction('login')">Se connecter</button>
+      </div>
+
+      <div id="face-enroll-notice" class="notice">
+        Connecte-toi d'abord (mot de passe) pour enregistrer ton visage.
+      </div>
+
+      <button type="button" class="btn secondary" onclick="openCamera()">Activer la caméra frontale</button>
+      <div class="viewport">
+        <video id="faceVideo" autoplay playsinline muted class="hidden"></video>
+        <div id="facePlaceholder" class="viewport-empty">Caméra arrêtée</div>
+      </div>
+
+      <div class="grid-2">
+        <button type="button" class="btn secondary" onclick="takeShot(1)">1. Photo fixe</button>
+        <button type="button" class="btn secondary" onclick="takeShot(2)">2. Cligner / bouger</button>
+      </div>
+
+      <div class="grid-2" style="margin-top: 10px;">
+        <div class="shot-box"><small>Capture 1</small><img id="shotImg1" alt="Capture 1" /></div>
+        <div class="shot-box"><small>Capture 2</small><img id="shotImg2" alt="Capture 2" /></div>
+      </div>
+
+      <button type="button" id="face-btn-enroll" class="btn" style="margin-top: 12px;" onclick="enrollFace()">Enregistrer ce visage</button>
+      <button type="button" id="face-btn-login" class="btn green hidden" style="margin-top: 12px;" onclick="loginWithFace()">Déverrouiller avec mon visage</button>
+    </section>
+
+    <!-- 3. EMPREINTE -->
+    <section id="view-fingerprint" class="card hidden">
+      <h2 class="title">Empreinte digitale (WebAuthn)</h2>
+      <p class="subtitle">Étape 1 : Enregistre ton empreinte. Étape 2 : Connecte-toi avec ton empreinte.</p>
+
+      <div class="pill-tabs">
+        <button type="button" id="fp-tab-register" class="pill-tab active" onclick="switchFpAction('register')">1. Enregistrer empreinte</button>
+        <button type="button" id="fp-tab-login" class="pill-tab" onclick="switchFpAction('login')">2. Se connecter</button>
+      </div>
+
+      <div id="fp-box-register">
+        <div id="fp-register-notice" class="notice">
+          Connecte-toi d'abord via l'onglet « Mot de passe », puis reviens ici pour enregistrer l'empreinte.
+        </div>
+        <div class="fingerprint-hero">
+          <div class="fingerprint-ring">🛡️</div>
+          <strong>Étape 1 — Enregistrer l'empreinte</strong>
+          <p class="subtitle" style="margin: 6px 0 0;">Pose ton doigt sur le capteur de ton Infinix quand la fenêtre s'ouvre.</p>
+        </div>
+        <button type="button" id="btn-fp-reg" class="btn" onclick="registerFingerprint()">Enregistrer l'empreinte de ce téléphone</button>
+      </div>
+
+      <div id="fp-box-login" class="hidden">
+        <div class="fingerprint-hero">
+          <div class="fingerprint-ring">👆</div>
+          <strong>Étape 2 — Se connecter par empreinte</strong>
+          <p class="subtitle" style="margin: 6px 0 0;">
+            Si Android demande « Clé de sécurité USB » ou « Utiliser un autre appareil », appuie sur « × » puis vérifie que la clé est bien enregistrée sur ce téléphone.
+          </p>
+        </div>
+        <button type="button" id="btn-fp-login" class="btn green" onclick="loginWithFingerprint()">Déverrouiller avec mon empreinte</button>
+        <button type="button" class="btn secondary" onclick="resetWebAuthnLock()">Débloquer / Réinitialiser</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="log-head">
+        <strong>Journal de réponse</strong>
+        <span id="httpStatus">Prêt</span>
+      </div>
+      <pre id="consoleBox">Choisis un mode ci-dessus.</pre>
+    </section>
+  </div>
+
+  <canvas id="captureCanvas" class="hidden"></canvas>
+
+  <script>
+
+    const BASE_URL = window.location.origin;
+    let accessToken = "";
+    let cameraStream = null;
+    let shot1Base64 = "";
+    let shot2Base64 = "";
+    let webauthnBusy = false;
+
+    function logResult(data, status = null) {
+      document.getElementById("httpStatus").textContent =
+        status !== null ? `HTTP ${status}` : "Info";
+      document.getElementById("consoleBox").textContent =
+        typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    }
+
+    function setWebAuthnBusy(busy) {
+      webauthnBusy = busy;
+      ["btn-fp-login", "btn-fp-reg"].forEach((id) => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = busy;
+      });
+    }
+
+    function resetWebAuthnLock() {
+      setWebAuthnBusy(false);
+      logResult("État WebAuthn réinitialisé. Tu peux réessayer.");
+    }
+
+    function updateSessionUI(token) {
+      accessToken = token || "";
+      const chip = document.getElementById("sessionChip");
+      const text = document.getElementById("sessionText");
+      const pwdActions = document.getElementById("password-session-actions");
+      const faceNotice = document.getElementById("face-enroll-notice");
+      const fpNotice = document.getElementById("fp-register-notice");
+
+      if (accessToken) {
+        chip.classList.add("online");
+        text.textContent = "Connecté";
+        pwdActions.classList.remove("hidden");
+        faceNotice.classList.add("hidden");
+        fpNotice.classList.add("hidden");
+      } else {
+        chip.classList.remove("online");
+        text.textContent = "Non connecté";
+        pwdActions.classList.add("hidden");
+        faceNotice.classList.remove("hidden");
+        fpNotice.classList.remove("hidden");
+      }
+    }
+
+    function authHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      return headers;
+    }
+
+    async function readResponse(response) {
+      const text = await response.text();
+      if (!text) return {};
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        return { detail: text };
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+      }
+      const video = document.getElementById("faceVideo");
+      const placeholder = document.getElementById("facePlaceholder");
+      if (video) {
+        video.pause();
+        video.srcObject = null;
+        video.classList.add("hidden");
+      }
+      if (placeholder) placeholder.classList.remove("hidden");
+    }
+
+    function switchMode(mode) {
+      stopCamera();
+      document.querySelectorAll(".mode-tile").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+      document.getElementById("view-password").classList.toggle("hidden", mode !== "password");
+      document.getElementById("view-face").classList.toggle("hidden", mode !== "face");
+      document.getElementById("view-fingerprint").classList.toggle("hidden", mode !== "fingerprint");
+    }
+
+    function switchFaceAction(action) {
+      document.getElementById("face-tab-enroll").classList.toggle("active", action === "enroll");
+      document.getElementById("face-tab-login").classList.toggle("active", action === "login");
+      document.getElementById("face-btn-enroll").classList.toggle("hidden", action !== "enroll");
+      document.getElementById("face-btn-login").classList.toggle("hidden", action !== "login");
+      document.getElementById("face-enroll-notice").classList.toggle(
+        "hidden", !(action === "enroll" && !accessToken)
+      );
+    }
+
+    function switchFpAction(action) {
+      document.getElementById("fp-tab-register").classList.toggle("active", action === "register");
+      document.getElementById("fp-tab-login").classList.toggle("active", action === "login");
+      document.getElementById("fp-box-register").classList.toggle("hidden", action !== "register");
+      document.getElementById("fp-box-login").classList.toggle("hidden", action !== "login");
+    }
+
+    async function loginWithPassword() {
+      try {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        if (!email || !password) return logResult("Saisis ton adresse e-mail et ton mot de passe.");
+
+        const response = await fetch(`${BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await readResponse(response);
+        if (response.ok && data.access_token) updateSessionUI(data.access_token);
+        logResult(data, response.status);
+      } catch (error) {
+        logResult("Erreur connexion : " + error.message);
+      }
+    }
+
+    async function checkProfile() {
+      try {
+        const response = await fetch(`${BASE_URL}/auth/me`, { headers: authHeaders() });
+        logResult(await readResponse(response), response.status);
+      } catch (error) {
+        logResult("Erreur /auth/me : " + error.message);
+      }
+    }
+
+    function logout() {
+      stopCamera();
+      updateSessionUI("");
+      logResult("Session locale supprimée. Le jeton d'accès n'est plus utilisé par cette page.");
+    }
+
+    async function openCamera() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Caméra indisponible. Ouvre cette page en HTTPS ou depuis localhost.");
+        }
+        stopCamera();
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "user" }, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        const video = document.getElementById("faceVideo");
+        video.srcObject = cameraStream;
+        video.classList.remove("hidden");
+        document.getElementById("facePlaceholder").classList.add("hidden");
+        await video.play();
+        logResult("Caméra frontale activée.");
+      } catch (error) {
+        logResult("Erreur caméra : " + error.message);
+      }
+    }
+
+    function takeShot(num) {
+      const video = document.getElementById("faceVideo");
+      if (!cameraStream || video.classList.contains("hidden") || !video.videoWidth) {
+        return logResult("Active la caméra et attends que l'image apparaisse.");
+      }
+      const canvas = document.getElementById("captureCanvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      const base64 = dataUrl.split(",")[1];
+
+      if (num === 1) {
+        shot1Base64 = base64;
+        document.getElementById("shotImg1").src = dataUrl;
+        logResult("Photo 1 capturée.");
+      } else {
+        shot2Base64 = base64;
+        document.getElementById("shotImg2").src = dataUrl;
+        logResult("Photo 2 capturée.");
+      }
+    }
+
+    async function enrollFace() {
+      try {
+        if (!accessToken) return logResult("Connecte-toi d'abord avant d'enregistrer ton visage.");
+        if (!shot1Base64 || !shot2Base64) return logResult("Prends les 2 photos avant d'enregistrer.");
+
+        const response = await fetch(`${BASE_URL}/auth/face/enroll`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            image_base64: shot1Base64,
+            frame_2_base64: shot2Base64,
+            consent_given: true
+          })
+        });
+        logResult(await readResponse(response), response.status);
+      } catch (error) {
+        logResult("Erreur enregistrement visage : " + error.message);
+      }
+    }
+
+    async function loginWithFace() {
+      try {
+        if (!shot1Base64 || !shot2Base64) return logResult("Prends les 2 photos avant de déverrouiller.");
+        const email = document.getElementById("email").value.trim();
+
+        const response = await fetch(`${BASE_URL}/auth/face/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            image_base64: shot1Base64,
+            frame_2_base64: shot2Base64
+          })
+        });
+        const data = await readResponse(response);
+        if (response.ok && data.access_token) updateSessionUI(data.access_token);
+        logResult(data, response.status);
+      } catch (error) {
+        logResult("Erreur connexion visage : " + error.message);
+      }
+    }
+
+    function b64urlToArrayBuffer(value) {
+      if (typeof value !== "string" || !value.length) {
+        throw new Error("Valeur base64url manquante dans les options WebAuthn.");
+      }
+      const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+      const binary = atob(padded);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function arrayBufferToB64url(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    }
+
+    function extractWebAuthnOptions(payload) {
+      const challengeKey =
+        payload.challengeKey || payload.challenge_key || payload.challenge_id || null;
+
+      let raw =
+        payload.optionsJson || payload.options_json ||
+        payload.publicKey || payload.public_key ||
+        payload.options || payload;
+
+      if (typeof raw === "string") raw = JSON.parse(raw);
+      if (raw && raw.publicKey) raw = raw.publicKey;
+      if (!raw || !raw.challenge) {
+        throw new Error("Les options WebAuthn reçues ne contiennent pas de challenge.");
+      }
+
+      // Copie sans dépendre de structuredClone (pas disponible sur certains navigateurs).
+      const publicKey = JSON.parse(JSON.stringify(raw));
+      publicKey.challenge = b64urlToArrayBuffer(publicKey.challenge);
+
+      if (publicKey.user && typeof publicKey.user.id === "string") {
+        publicKey.user.id = b64urlToArrayBuffer(publicKey.user.id);
+      }
+
+      if (Array.isArray(publicKey.excludeCredentials)) {
+        publicKey.excludeCredentials = publicKey.excludeCredentials.map((credential) => ({
+          ...credential,
+          id: b64urlToArrayBuffer(credential.id)
+        }));
+      }
+
+      if (Array.isArray(publicKey.allowCredentials)) {
+        publicKey.allowCredentials = publicKey.allowCredentials.map((credential) => ({
+          ...credential,
+          id: b64urlToArrayBuffer(credential.id)
+        }));
+      }
+
+      return { challengeKey, publicKey };
+    }
+
+    function assertWebAuthnAvailable() {
+      if (!window.isSecureContext) {
+        throw new Error(
+          "Contexte non sécurisé : WebAuthn exige HTTPS ou localhost. " +
+          "Sur Android, utilise le tunnel ADB vers localhost (voir les instructions sous le code)."
+        );
+      }
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        throw new Error("Ce navigateur ne prend pas en charge WebAuthn. Essaie avec Chrome Android à jour.");
+      }
+    }
+
+    function serializeRegistration(credential) {
+      return {
+        id: credential.id,
+        rawId: arrayBufferToB64url(credential.rawId),
+        type: credential.type,
+        response: {
+          clientDataJSON: arrayBufferToB64url(credential.response.clientDataJSON),
+          attestationObject: arrayBufferToB64url(credential.response.attestationObject),
+          transports: typeof credential.response.getTransports === "function"
+            ? credential.response.getTransports()
+            : []
+        }
+      };
+    }
+
+    function serializeAuthentication(credential) {
+      return {
+        id: credential.id,
+        rawId: arrayBufferToB64url(credential.rawId),
+        type: credential.type,
+        response: {
+          clientDataJSON: arrayBufferToB64url(credential.response.clientDataJSON),
+          authenticatorData: arrayBufferToB64url(credential.response.authenticatorData),
+          signature: arrayBufferToB64url(credential.response.signature),
+          userHandle: credential.response.userHandle
+            ? arrayBufferToB64url(credential.response.userHandle)
+            : null
+        }
+      };
+    }
+
+    function webAuthnErrorMessage(error) {
+      if (!error) return "Erreur WebAuthn inconnue.";
+      const messages = {
+        NotAllowedError: "Authentification annulée ou expirée, ou aucun identifiant compatible trouvé.",
+        InvalidStateError: "Cette empreinte/clé est déjà enregistrée sur cet appareil.",
+        NotSupportedError: "Le téléphone ou le navigateur ne prend pas en charge cette méthode.",
+        SecurityError: "Origine ou domaine RP non autorisé. Vérifie HTTPS, localhost et le RP ID du serveur.",
+        ConstraintError: "Le téléphone ne peut pas satisfaire les exigences de l'authentificateur demandées.",
+        AbortError: "L'opération a été interrompue."
+      };
+      return (messages[error.name] || error.message || "Erreur WebAuthn.") +
+        ` (${error.name || "Erreur"})`;
+    }
+
+    async function registerFingerprint() {
+      if (webauthnBusy) return;
+      if (!accessToken) return logResult("Connecte-toi d'abord (onglet « Mot de passe ») avant d'enregistrer.");
+      setWebAuthnBusy(true);
+
+      try {
+        assertWebAuthnAvailable();
+
+        const optionsResponse = await fetch(`${BASE_URL}/auth/webauthn/register/options`, {
+          method: "POST",
+          headers: authHeaders()
+        });
+        const optionsData = await readResponse(optionsResponse);
+        if (!optionsResponse.ok) {
+          logResult(optionsData, optionsResponse.status);
+          return;
+        }
+
+        const { publicKey } = extractWebAuthnOptions(optionsData);
+
+        // On conserve les paramètres du serveur, mais on demande l'authentificateur
+        // intégré au téléphone et une clé résidente utilisable sans liste allowCredentials.
+        publicKey.authenticatorSelection = {
+          ...(publicKey.authenticatorSelection || {}),
+          authenticatorAttachment: "platform",
+          residentKey: "required",
+          requireResidentKey: true,
+          userVerification: "required"
+        };
+
+        logResult("Confirme l'enregistrement sur ton téléphone avec ton empreinte ou le verrouillage de l'écran.");
+        const credential = await navigator.credentials.create({ publicKey });
+        if (!credential) throw new Error("Le téléphone n'a retourné aucun identifiant.");
+
+        const credentialObject = serializeRegistration(credential);
+        // Contrat auth_routes.py : cette route attend uniquement { credential }.
+        const verifyResponse = await fetch(`${BASE_URL}/auth/webauthn/register/verify`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            credential: credentialObject
+          })
+        });
+
+        const verifyData = await readResponse(verifyResponse);
+        logResult(verifyData, verifyResponse.status);
+        if (verifyResponse.ok) {
+          logResult({
+            message: "Empreinte/passkey enregistrée. Tu peux maintenant ouvrir l'onglet « Se connecter ».",
+            server_response: verifyData
+          }, verifyResponse.status);
+        }
+      } catch (error) {
+        logResult("Erreur enregistrement empreinte : " + webAuthnErrorMessage(error));
+      } finally {
+        setWebAuthnBusy(false);
+      }
+    }
+
+    async function loginWithFingerprint() {
+      if (webauthnBusy) return;
+      setWebAuthnBusy(true);
+
+      try {
+        assertWebAuthnAvailable();
+        const email = document.getElementById("email").value.trim();
+        if (!email) throw new Error("Saisis l'adresse e-mail du compte.");
+
+        const optionsResponse = await fetch(
+          `${BASE_URL}/auth/webauthn/login/options?email=${encodeURIComponent(email)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+        const optionsData = await readResponse(optionsResponse);
+        if (!optionsResponse.ok) {
+          logResult(optionsData, optionsResponse.status);
+          return;
+        }
+
+        const { publicKey } = extractWebAuthnOptions(optionsData);
+
+        // Important : ne pas supprimer allowCredentials si le serveur l'a fourni.
+        // Si le serveur ne le fournit pas, Android recherche une passkey résidente.
+        publicKey.userVerification = "required";
+
+        logResult("Valide la demande sur ton téléphone avec ton empreinte ou le verrouillage de l'écran.");
+        const assertion = await navigator.credentials.get({ publicKey });
+        if (!assertion) throw new Error("Le téléphone n'a retourné aucune assertion.");
+
+        const credentialObject = serializeAuthentication(assertion);
+        // Contrat auth_routes.py : cette route attend { email, credential }.
+        const verifyResponse = await fetch(`${BASE_URL}/auth/webauthn/login/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            credential: credentialObject
+          })
+        });
+
+        const verifyData = await readResponse(verifyResponse);
+        if (verifyResponse.ok && verifyData.access_token) {
+          updateSessionUI(verifyData.access_token);
+        }
+        logResult(verifyData, verifyResponse.status);
+      } catch (error) {
+        logResult("Erreur connexion empreinte : " + webAuthnErrorMessage(error));
+      } finally {
+        setWebAuthnBusy(false);
+      }
+    }
+
+    // Diagnostic utile pour vérifier les conditions WebAuthn sur le téléphone.
+    window.addEventListener("load", () => {
+      const secure = window.isSecureContext;
+      const supported = !!(window.PublicKeyCredential && navigator.credentials);
+      if (!secure || !supported) {
+        logResult({
+          diagnostic: "WebAuthn non prêt",
+          origine: window.location.origin,
+          contexte_securise: secure,
+          webauthn_disponible: supported,
+          conseil: "Utilise Chrome Android à jour et une origine HTTPS ou localhost."
+        });
+      }
+    });
+
+  </script>
+</body>
+</html>
