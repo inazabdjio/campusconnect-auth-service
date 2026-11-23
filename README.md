@@ -61,7 +61,7 @@ Copiez le fichier modèle `.env.example` pour créer votre fichier `.env` :
 cp .env.example .env
 ```
 
-Ouvrez ensuite le fichier `.env` et vérifiez les informations (port de l'application, accès à votre base de données PostgreSQL, clés secrètes et n'oublier pas de remplacer mot_de_passe par votre mot de passe de postgresql).
+Ouvrez ensuite le fichier `.env` et vérifiez les informations (port de l'application, accès à votre base de données PostgreSQL, clés secrètes et n'oublier pas de remplacer le deuxieme postgres ecrit dans la ligne de DATABASE_URL par votre mot de passe de postgresql).
 
 ---
 
