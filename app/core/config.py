@@ -2,6 +2,19 @@ from functools import lru_cache
 from typing import Any
 import httpx
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+import re
+
+_PLACEHOLDER_RE = re.compile(r"\$\{([A-Za-z0-9_]+):([^}]*)\}")
+
+
+def _resolve_placeholders(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    return _PLACEHOLDER_RE.sub(
+        lambda m: os.environ.get(m.group(1), m.group(2)),
+        value,
+    )
 
 
 class Settings(BaseSettings):
@@ -46,7 +59,8 @@ def fetch_spring_config(service_name: str, profile: str, config_server_url: str)
             for source in reversed(payload.get("propertySources", [])):
                 props = source.get("source", {})
                 if isinstance(props, dict):
-                    merged.update(props)
+                    for key, val in props.items():
+                        merged[key] = _resolve_placeholders(val)
     except Exception:
         # En mode isolé ou si Config Server n'est pas encore démarré, on garde les valeurs env/défaut
         pass
