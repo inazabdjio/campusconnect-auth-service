@@ -1,18 +1,39 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: auth-service-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auth_db}
+      POSTGRES_USER: ${POSTGRES_USER:-auth_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auth_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-auth_user} -d ${POSTGRES_DB:-auth_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   auth-service:
-    build: .
-    container_name: campus-auth-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-service
+    env_file:
+      - .env
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8001
     ports:
       - "8001:8001"
-    environment:
-      SPRING_PROFILES_ACTIVE: dev,docker
-      CONFIG_SERVER_URL: http://config-server:8888
-      EUREKA_ENABLED: "true"
-      KAFKA_ENABLED: "true"
-    restart: on-failure
-    networks:
-      - campus-net
+    volumes:
+      - ./mobile_test.html:/app/mobile_test.html:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
-networks:
-  campus-net:
-    external: true
+volumes:
+  auth_pg_data:
