@@ -36,6 +36,8 @@ class EurekaClient:
                 "instanceId": self.instance_id,
                 "hostName": self.host_name,
                 "app": self.app_name,
+                "vipAddress": self.app_name.lower(),
+                "secureVipAddress": self.app_name.lower(),
                 "ipAddr": ip_addr,
                 "status": "UP",
                 "port": {"$": self.port, "@enabled": "true"},
